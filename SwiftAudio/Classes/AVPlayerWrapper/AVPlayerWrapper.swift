@@ -37,7 +37,7 @@ class AVPlayerWrapper: AVPlayerWrapperProtocol {
      True if the last call to load(from:playWhenReady) had playWhenReady=true.
      */
     fileprivate var _playWhenReady: Bool = true
-    fileprivate var _initialTime: TimeInterval?
+    fileprivate var _penddingSeekTime: TimeInterval?
     
     fileprivate var _state: AVPlayerWrapperState = AVPlayerWrapperState.idle {
         didSet {
@@ -165,9 +165,14 @@ class AVPlayerWrapper: AVPlayerWrapperProtocol {
     }
     
     func seek(to seconds: TimeInterval) {
+        
+        guard currentItem != nil else {
+            _penddingSeekTime = seconds
+            return
+        }
         avPlayer.seek(to: CMTimeMakeWithSeconds(seconds, preferredTimescale: 1000)) { (finished) in
-            if let _ = self._initialTime {
-                self._initialTime = nil
+            if let _ = self._penddingSeekTime {
+                self._penddingSeekTime = nil
                 if self._playWhenReady {
                     self.play()
                 }
@@ -185,17 +190,16 @@ class AVPlayerWrapper: AVPlayerWrapperProtocol {
     
     
     func load(from url: URL, playWhenReady: Bool, options: [String: Any]? = nil) {
-        reset(soft: true)
+        reset(soft: false)
         _playWhenReady = playWhenReady
 
         if currentItem?.status == .failed {
             recreateAVPlayer()
         }
-        
         self._pendingAsset = AVURLAsset(url: url, options: options)
         
         if let pendingAsset = _pendingAsset {
-            self._state = .loading
+            self._state = _playWhenReady ?   .buffering :  .loading
             pendingAsset.loadValuesAsynchronously(forKeys: [Constants.assetPlayableKey], completionHandler: { [weak self] in
                 
                 guard let self = self else {
@@ -241,7 +245,7 @@ class AVPlayerWrapper: AVPlayerWrapperProtocol {
     }
     
     func load(from url: URL, playWhenReady: Bool, initialTime: TimeInterval? = nil, options: [String : Any]? = nil) {
-        _initialTime = initialTime
+        _penddingSeekTime = initialTime
         self.pause()
         self.load(from: url, playWhenReady: playWhenReady, options: options)
     }
@@ -299,11 +303,11 @@ extension AVPlayerWrapper: AVPlayerObserverDelegate {
         switch status {
         case .readyToPlay:
             self._state = .ready
-            if _playWhenReady && (_initialTime ?? 0) == 0 {
+            if _playWhenReady && (_penddingSeekTime ?? 0) == 0 {
                 self.play()
             }
-            else if let initialTime = _initialTime {
-                self.seek(to: initialTime)
+            else if let time = _penddingSeekTime {
+                self.seek(to: time)
             }
             break
             
