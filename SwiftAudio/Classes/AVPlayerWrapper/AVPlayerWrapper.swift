@@ -141,6 +141,7 @@ class AVPlayerWrapper: AVPlayerWrapperProtocol {
     }
     
     func play() {
+        _playWhenReady = true
         avPlayer.rate = _rate
     }
     
