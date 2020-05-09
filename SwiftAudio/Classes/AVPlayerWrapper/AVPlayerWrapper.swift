@@ -143,6 +143,9 @@ class AVPlayerWrapper: AVPlayerWrapperProtocol {
     func play() {
         _playWhenReady = true
         avPlayer.rate = _rate
+        if(_state == .loading){
+            _state = .buffering
+        }
     }
     
     func pause() {
@@ -229,6 +232,7 @@ class AVPlayerWrapper: AVPlayerWrapperProtocol {
                         
                     case .failed:
                         if isPendingAsset {
+                            self._state = .idle
                             self.delegate?.AVWrapper(failedWithError: error)
                             self._pendingAsset = nil
                         }
@@ -313,6 +317,7 @@ extension AVPlayerWrapper: AVPlayerObserverDelegate {
             break
             
         case .failed:
+            self._state = .idle
             self.delegate?.AVWrapper(failedWithError: avPlayer.error)
             break
             
