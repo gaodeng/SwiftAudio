@@ -197,8 +197,8 @@ class AVPlayerWrapper: AVPlayerWrapperProtocol {
         reset(soft: false)
         _playWhenReady = playWhenReady
 
-        if currentItem?.status == .failed {
-            recreateAVPlayer()
+        if avPlayer.status == .failed {
+            self.recreateAVPlayer()
         }
         self._pendingAsset = AVURLAsset(url: url, options: options)
         

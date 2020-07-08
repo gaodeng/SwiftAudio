@@ -169,7 +169,7 @@ public class AudioPlayer: AVPlayerWrapperDelegate {
         if (automaticallyUpdateNowPlayingInfo) {
             self.loadNowPlayingMetaValues()
         }
-        enableRemoteCommands(forItem: item)
+//        enableRemoteCommands(forItem: item)
     }
     
     /**
